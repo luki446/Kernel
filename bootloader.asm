@@ -21,7 +21,7 @@ jmp short code_start										; Jump to bootloader entry point
 nop															; Pad with NOP
 times 3-($-$$) db 0x00										; Make sure this is the start of the BPB
 
-; The BPB starts here
+															; The BPB starts here
 
 bpbOEM						db 'Phobis  '
 bpbBytesPerSector			dw 512
@@ -43,7 +43,7 @@ bsSerialNumber				dd 0x12345678
 bsVolumeLabel				db 'Phobis v1.0'
 bsFileSystem				db 'FAT12   '
 
-; End of BPB, begin main bootloader code
+															; End of BPB, begin main bootloader code
 
 code_start:
 	cli
