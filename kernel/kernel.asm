@@ -874,7 +874,7 @@ check_bin_extension:
 		pop dx
 		pop ax
 		ret
-	.bin_string db 'BIN', 0x00
+	.bin_string db 'COM', 0x00
 	
 ; --------------------------------------------------------------------------------------------
 ; Clear cursor. Named such because of consistency, actual name might be misleading.
