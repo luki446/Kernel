@@ -12,7 +12,9 @@
 ;   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 ;   See the License for the specific language governing permissions and
 ;	limitations under the License.
-
+; --------------------------------------------------------------------------------------------
+; Comments look good on my machine. Their alginment as seen on github does
+; not look nice... Not sure why.
 
 org 0x7C00													; Entry point for every bootloader
 bits 16														; We are 16bit real mode operating system
