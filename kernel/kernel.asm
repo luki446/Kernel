@@ -72,7 +72,7 @@ kmain:
 	int 80h
 	jmp reload							; Reload shell
 data:
-	ShellName		db	'shell.bin', 0x00
+	ShellName		db	'command.com', 0x00
 	ProcessWarning1	db	0x0A, "Kernel: command.com has been terminated,"
 					db	0x0A, "        process exit code: ", 0x00
 	ProcessWarning2	db	0x0A, "command.com will be now reloaded."
