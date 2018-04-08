@@ -510,16 +510,3 @@ root_cmd:
 		int 0x80
 		jmp prompt_loop
 	.missing_parameter_msg	db 'Required parameter missing: new root (integer).', 0x0A, 0x00
-
-	
-%include 'includes/shell/exit.inc'
-%include 'includes/shell/clear.inc'
-%include 'includes/shell/help.inc'
-%include 'includes/shell/ls.inc'
-%include 'includes/shell/cat.inc'
-%include 'includes/shell/cd.inc'
-%include 'includes/shell/time.inc'
-%include 'includes/shell/debug.inc'
-%include 'includes/shell/ver.inc'
-%include 'includes/shell/color.inc'
-%include 'includes/shell/root.inc'
