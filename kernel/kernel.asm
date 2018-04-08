@@ -3235,10 +3235,10 @@ upper_to_lowercase:
 allocate_mem32:
 	push eax
 	push gs
-	mov cx, KernelSpace				; Point GS to kernel
+	mov cx, KernelSpace							; Point GS to kernel
 	mov gs, cx
-	mov ecx, dword [gs:TopMemory]	; Retrieve current top of used memory
-	add dword [gs:TopMemory], eax	; Allocate memory
+	mov ecx, dword [gs:TopMemory]				; Retrieve current top of used memory
+	add dword [gs:TopMemory], eax				; Allocate memory
 	xor eax, eax
 	mov ax, ds
 	shl eax, 4
@@ -3256,12 +3256,12 @@ allocate_mem32:
 allocate_memory:
 	push ax
 	push gs
-	mov cx, KernelSpace				; Point GS to kernel
+	mov cx, KernelSpace							; Point GS to kernel
 	mov gs, cx
-	mov cx, word [gs:TopSegment]	; Retrieve current top of used memory
-	shr ax, 4					; Get memory size in 16 byte blocks
-	inc ax						; Adjust AX
-	add word [gs:TopSegment], ax	; Allocate memory
+	mov cx, word [gs:TopSegment]				; Retrieve current top of used memory
+	shr ax, 4									; Get memory size in 16 byte blocks
+	inc ax										; Adjust AX
+	add word [gs:TopSegment], ax				; Allocate memory
 	pop gs
 	pop ax
 	iret
@@ -3277,10 +3277,10 @@ ascii_dump:
 	push ecx
 	push esi
 	.loop:
-		a32 o32 lodsb					; Byte from ESI
+		a32 o32 lodsb							; Byte from ESI
 		push 0x01
 		int 80h
-		a32 o32 loop .loop				; Loop
+		a32 o32 loop .loop						; Loop
 	.done:
 		pop esi
 		pop ecx
@@ -3303,10 +3303,10 @@ beep:
 	mov eax, 1193180
 	xor edx, edx
 	div ecx
-	out 0x42, al						; Output low byte
+	out 0x42, al								; Output low byte
 	mov al, ah
-	out 0x42, al						; Output high byte
-	in al, 0x61							; Connect speaker to timer 2
+	out 0x42, al								; Output high byte
+	in al, 0x61									; Connect speaker to timer 2
 	or al, 00000011b
 	out 0x61, al
 	pop edx
@@ -3327,12 +3327,12 @@ center_print_string:
 	push ecx
 	push dx
 	push 0x09
-	int 80h							; Find length of string
-	mov ax, 80							; 80 - length
+	int 80h										; Find length of string
+	mov ax, 80									; 80 - length
 	sub ax, cx
 	xor dx, dx
 	mov bx, 2
-	div bx								; divide / 2
+	div bx
 	mov dx, ax
 	push 0x0D
 	int 80h
