@@ -115,7 +115,7 @@ mov si, prompt_input								; Prepare SI for start process function
 mov di, command_line_switches						; Prepare to pass the switches
 push 0x14
 int 80h												; Try to start new process
-cmp eax, 0xFFFFFFFF									; If fail, add .bin and try again
+cmp eax, 0xFFFFFFFF									; If fail, add .com and try again
 jne prompt_loop										; Otherwise restart the loop
 add_bin:
 push 0x09
