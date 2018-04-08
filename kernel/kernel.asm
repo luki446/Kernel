@@ -81,26 +81,6 @@ data:
 	BootDrive		db	0x00
 
 ; ****************************INTERNAL KERNEL PARTS BEGIN FROM HERE***************************
-	
-; --------------------------------------------------------------------------------------------
-; Handles request for extended memory
-; --------------------------------------------------------------------------------------------
-; IN:  EAX --> Amount of memory to allocate (in bytes)
-; OUT: ECX --> Beginning of allocated memory (flat address relative to program segment)
-allocate_mem32:
-	push eax
-	push gs
-	mov cx, KernelSpace						; Point GS to kernel
-	mov gs, cx
-	mov ecx, dword [gs:TopMemory]			; Retrieve current top of used memory
-	add dword [gs:TopMemory], eax			; Allocate memory
-	xor eax, eax
-	mov ax, ds
-	shl eax, 4
-	sub ecx, eax
-	pop gs
-	pop eax
-	iret
 
 ; --------------------------------------------------------------------------------------------
 ; Trasform FAT file name 'README  TXT' to a readable format 'README.TXT'.
@@ -3784,4 +3764,4 @@ system_call:
 	G5			equ 1568
 	Gs5			equ 1661
 
-times 80h00-($-$$)			db 0x00				; Pad reserved sectors with 0x00
+times 0x8000-($-$$)			db 0x00				; Pad reserved sectors with 0x00
