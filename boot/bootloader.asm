@@ -67,12 +67,12 @@ code_start:
 		mov cx, 3											; Load 3 sectors
 		call read_sectors
 		jc err												; Catch optional errors.
-		mov si, DoneMsg
+		mov si, donemsg
 		call print											; Display done message
 		jmp stage2											; Jump to stage 2
 
 	err:
-		mov si, ErrMsg
+		mov si, errormsg
 		call print
 
 	halt:
