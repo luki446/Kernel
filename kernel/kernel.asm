@@ -1980,14 +1980,14 @@ get_current_drive:
 	pop ax
 	iret
 ; --------------------------------------------------------------------------------------------
-; Return the current pallette.									; Now, sing me happy birthday!
+; Return the current pallette.									
 ; --------------------------------------------------------------------------------------------
 ; IN:  None
 ; OUT: AH --> Char palette
 ;      AL --> Cursor palette
 ; Special: Registers preserved
 
-get_current_palette:											; RIP Dennis Ritchie
+get_current_palette:
 	push ds
 	mov ax, KernelSpace
 	mov ds, ax
@@ -2001,14 +2001,14 @@ get_current_palette:											; RIP Dennis Ritchie
 ; --------------------------------------------------------------------------------------------
 ; IN:  None
 ; OUT: AH = cursor X
-;      AL = cursor Y
+;      AL = cursor Y                                                                                                      ; Now, sing me happy birthday!
 ; Special: Registers preserved
 
 get_cursor_position:
 	push bx
 	push cx
 	push dx
-	push ds
+	push ds                                                                                                         ; RIP Dennis Ritchie
 	mov ax, KernelSpace
 	mov ds, ax
 	mov ax, word [CursorLocation]
