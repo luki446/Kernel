@@ -1445,12 +1445,12 @@ draw_sprite:
 		lodsb
 		cmp al, 0xFF
 		je .compression
-		mov dl, al
+		mov dl, al				; RIP Ioannes VIII
 		cmp bx, word [es:.SpriteX]
 		je .next_row
 		push 0x81
 		int 80h
-		inc bx
+		inc bx					; RIP Constantine XI
 		jmp .loop
 		.next_row:
 			mov bx, word [es:.OriginalBX]
