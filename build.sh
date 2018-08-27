@@ -1,6 +1,6 @@
 #!/bin/bash
 
-printf "*****Phobis build script*****\n\n"
+printf "Phobis build script\n\n"
 
 if [[ $EUID -ne 0 ]]; then
 printf "This script requires root privileges. Run with 'sudo' or as root.\n"
