@@ -13,18 +13,18 @@
 ;   See the License for the specific language governing permissions and
 ;    limitations under the License.
 ; --------------------------------------------------------------------------------------------
-org 0x0010                            ; Bootloader loads kernel here (FFFF:0010)
-bits 16                                ; 16-bit Unreal mode
+org 0x0010                                  ; Bootloader loads kernel here (FFFF:0010)
+bits 16                                     ; 16-bit Unreal mode
 
 kmain:
-    xor eax, eax                        ; Flush registers
+    xor eax, eax                            ; Flush registers
     xor ebx, ebx
     xor ecx, ecx
-    and edx, 0x000000FF                    ; (save boot drive)
+    and edx, 0x000000FF                     ; (save boot drive)
     xor esi, esi
     xor edi, edi
     xor ebp, ebp
-    cli                                    ; Setup segments
+    cli                                     ; Setup segments
     mov ax, KernelSpace
     mov ds, ax
     mov es, ax
@@ -35,52 +35,52 @@ kmain:
     push ds
     xor ax, ax
     mov ds, ax
-    mov word [0x0200], system_call        ; Hook interrupt 80h for the system API (linux 4ever)
+    mov word [0x0200], system_call          ; Hook interrupt 80h for the system API (linux 4ever)
     mov word [0x0202], KernelSpace
-    mov word [0x006C], break_int        ; Hook the break interrupt
+    mov word [0x006C], break_int            ; Hook the break interrupt
     mov word [0x006E], KernelSpace
-    mov word [0x0070], timer_int        ; Hook the timer interrupt
+    mov word [0x0070], timer_int            ; Hook the timer interrupt
     mov word [0x0072], KernelSpace
     pop ds
     sti
-    mov byte [BootDrive], dl            ; Save boot drive
-    push 0x29                            ; Set current drive
-    int 80h                            ; Prepare the screen
-    push 80h                            ; Enter graphics mode
+    mov byte [BootDrive], dl                ; Save boot drive
+    push 0x29                               ; Set current drive
+    int 80h                                 ; Prepare the screen
+    push 80h                                ; Enter graphics mode
     int 80h
-    push 0x82                            ; Leave graphics mode (this should fix a bug with this on some machines)
+    push 0x82                               ; Leave graphics mode (this should fix a bug with this on some machines)
     int 80h
     reload:
     mov si, ShellName
     mov di, ShellSwitches
     push 0x14
-    int 80h                            ; Warning: PID 1 should NEVER exit!
+    int 80h                                 ; Warning: PID 1 should NEVER exit!
     mov si, ProcessWarning1
     push 0x02
     int 80h
     xor cl, cl
     xor dl, dl
     push 0x06
-    int 80h                            ; Print exit code
-    mov si, ProcessWarning2                ; Print second part of message
+    int 80h                                 ; Print exit code
+    mov si, ProcessWarning2                 ; Print second part of message
     push 0x02
     int 80h
     push 0x18
-    int 80h                            ; Pause
-    mov dl, byte [BootDrive]            ; Set the current drive to the boot drive
+    int 80h                                 ; Pause
+    mov dl, byte [BootDrive]                ; Set the current drive to the boot drive
     push 0x29
     int 80h
-    jmp reload                            ; Reload shell
+    jmp reload                              ; Reload shell
 data:
-    ShellName        db    'command.com', 0x00
+    ShellName          db    'command.com', 0x00
     ProcessWarning1    db    0x0A, "Kernel: command.com has been terminated,"
-                    db    0x0A, "        process exit code: ", 0x00
+                       db    0x0A, "        process exit code: ", 0x00
     ProcessWarning2    db    0x0A, "command.com will be now reloaded."
-                    db    0x0A, "Press a key to continue...", 0x00
-    ShellSwitches    db    0x00
-    BootDrive        db    0x00
+                       db    0x0A, "Press a key to continue...", 0x00
+    ShellSwitches      db    0x00
+    BootDrive          db    0x00
 
-; ****************************INTERNAL KERNEL PARTS BEGIN FROM HERE***************************
+; ************************    INTERNAL KERNEL PARTS BEGIN FROM HERE    ***********************
 
 ; --------------------------------------------------------------------------------------------
 ; Trasform FAT file name 'README  TXT' to a readable format 'README.TXT'.
@@ -95,17 +95,17 @@ fat_name_to_string:
     push cx
     push si
     push di
-    mov cx, 8                        ; Filename is 8 characters max
+    mov cx, 8                               ; Filename is 8 characters max
     .name_loop:
         lodsb
-        cmp al, ' '                    ; Check for space
+        cmp al, ' '                         ; Check for space
         je .skip_padding_loop
         stosb
         loop .name_loop
     .skip_padding_loop:
         mov al, byte [ds:si]
         test al, al
-        jz .done                    ; No extension
+        jz .done                            ; No extension
         cmp al, ' '
         jne .extension
         inc si
@@ -122,7 +122,7 @@ fat_name_to_string:
         stosb
         jmp .extension_loop
     .done:
-        xor al, al                    ; Add 0x00 terminator
+        xor al, al                          ; Add 0x00 terminator
         stosb
         pop di
         pop si
@@ -153,7 +153,7 @@ fat_write_entry:
     mov ax, KernelSpace
     mov es, ax
     mov word [es:.Cluster], di
-    mov di, .ConvertedName            ; Convert to fat name
+    mov di, .ConvertedName                  ; Convert to fat name
     call string_to_fat_name
     mov ds, ax
     mov byte [.Attributes], al
@@ -164,33 +164,33 @@ fat_write_entry:
     mov word [.EntryCounter], 0x0000
     .find_empty_slot:
         inc word [.EntryCounter]
-        mov ah, byte [es:di]        ; Byte from the directory table, first of entry
-        cmp ah, 0xE5                ; Empty entry?
+        mov ah, byte [es:di]                ; Byte from the directory table, first of entry
+        cmp ah, 0xE5                        ; Empty entry?
         jz .write_entry
-        mov ah, byte [es:di]        ; Byte from the directory table, first of entry
-        test ah, ah                    ; End of table?
+        mov ah, byte [es:di]                ; Byte from the directory table, first of entry
+        test ah, ah                         ; End of table?
         jz .write_entry
-        mov ax, 32                    ; Skip entry
+        mov ax, 32                          ; Skip entry
         mov di, CurrentDirectoryCache
         mul word [.EntryCounter]
         add di, ax
         jmp .find_empty_slot
     .write_entry:
         mov si, .ConvertedName
-        mov cx, 11                    ; Copy file name
+        mov cx, 11                          ; Copy file name
         rep movsb
-        mov al, byte [.Attributes]    ; Store attributes
+        mov al, byte [.Attributes]          ; Store attributes
         stosb
-        xor ax, ax                    ; Erase unused entries
+        xor ax, ax                          ; Erase unused entries
         mov cx, 5
         rep stosw
-        mov ax, word [.RawTime]        ; Get time
+        mov ax, word [.RawTime]             ; Get time
         stosw
-        mov ax, word [.RawDate]        ; Get date
+        mov ax, word [.RawDate]             ; Get date
         stosw
-        mov ax, word [.Cluster]        ; Get cluster
+        mov ax, word [.Cluster]             ; Get cluster
         stosw
-        mov eax, dword [.FileSize]    ; Get size
+        mov eax, dword [.FileSize]          ; Get size
         stosd
         pop es
         pop ds
@@ -202,13 +202,13 @@ fat_write_entry:
         pop eax
         ret
 
-    .EntryCounter    dw    0x0000
-    .Cluster        dw    0x0000
-    .FileSize        dd    0x00000000
-    .RawDate        dw    0x0000
-    .RawTime        dw    0x0000
-    .Attributes        db    0x00
-    .ConvertedName    times 12 db 0x00
+    .EntryCounter  dw    0x0000
+    .Cluster       dw    0x0000
+    .FileSize      dd    0x00000000
+    .RawDate       dw    0x0000
+    .RawTime       dw    0x0000
+    .Attributes    db    0x00
+    .ConvertedName times 12 db 0x00
     
 ; --------------------------------------------------------------------------------------------
 ; Write root directory on selected drive number.
@@ -226,38 +226,38 @@ fat_write_root:
     mov ax, KernelSpace
     mov ds, ax
     mov es, ax
-    mov byte [.CurrentDrive], dl    ; Fetch metadata from the BPB
-    mov ebx, 0x0E                    ; Address of the Reserved sectors constant
+    mov byte [.CurrentDrive], dl            ; Fetch metadata from the BPB
+    mov ebx, 0x0E                           ; Address of the Reserved sectors constant
     push 0x25
-    int 80h                        ; Load word from address
-    mov word [.StartOfFAT], ax        ; Save result
-    mov ebx, 0x10                    ; Address of the Number of FATs constant
+    int 80h                                 ; Load word from address
+    mov word [.StartOfFAT], ax              ; Save result
+    mov ebx, 0x10                           ; Address of the Number of FATs constant
     push 0x24
-    int 80h                        ; Load word from address
-    mov byte [.NumberOfFATs], al    ; Save result
-    mov ebx, 0x11                    ; Address of the Root entries constant
+    int 80h                                 ; Load word from address
+    mov byte [.NumberOfFATs], al            ; Save result
+    mov ebx, 0x11                           ; Address of the Root entries constant
     push 0x25
-    int 80h                        ; Load word from address
-    mov word [.RootEntries], ax        ; Save result
-    mov ebx, 0x16                    ; Address of the Sectors per FAT constant
+    int 80h                                 ; Load word from address
+    mov word [.RootEntries], ax             ; Save result
+    mov ebx, 0x16                           ; Address of the Sectors per FAT constant
     push 0x25
-    int 80h                        ; Load word from address
-    mov word [.SizeOfFAT], ax        ; Save result
-    mov ax, word [.SizeOfFAT]        ; Calculate the start and size of the root directory
-    mov bl, byte [.NumberOfFATs]    ; Start = reserved_sectors + (number_of_FATs * sectors_per_FAT)
-    xor bh, bh                        ; Size = (root_entries * 32) / bytes_per_secto
-    mul bx                            ; Number of fats * sector per fat in AX
-    add ax, word [.StartOfFAT]        ; Add reserved sectors
-    mov word [.StartOfRoot], ax        ; Save result in memory
-    mov ax, 32                        ; Root entries * 32
+    int 80h                                 ; Load word from address
+    mov word [.SizeOfFAT], ax               ; Save result
+    mov ax, word [.SizeOfFAT]               ; Calculate the start and size of the root directory
+    mov bl, byte [.NumberOfFATs]            ; Start = reserved_sectors + (number_of_FATs * sectors_per_FAT)
+    xor bh, bh                              ; Size = (root_entries * 32) / bytes_per_secto
+    mul bx                                  ; Number of fats * sector per fat in AX
+    add ax, word [.StartOfFAT]              ; Add reserved sectors
+    mov word [.StartOfRoot], ax             ; Save result in memory
+    mov ax, 32                              ; Root entries * 32
     mul word [.RootEntries]
-    xor dx, dx                        ; XOR DX for division
+    xor dx, dx                              ; dx=0 for division, ya remember that old trick?
     div word [.BytesPerSector]
-    mov word [.SizeOfRoot], ax        ; Save result in memory
-    mov bx, CurrentDirectoryCache    ; Write root dir from buffer
-    mov ax, word [.StartOfRoot]        ; Write to here
-    mov cx, word [.SizeOfRoot]        ; Write this many sectors
-    mov dl, byte [.CurrentDrive]    ; Retrieve drive
+    mov word [.SizeOfRoot], ax              ; Save result in memory
+    mov bx, CurrentDirectoryCache           ; Write root dir from buffer
+    mov ax, word [.StartOfRoot]             ; Write to here
+    mov cx, word [.SizeOfRoot]              ; Write this many sectors
+    mov dl, byte [.CurrentDrive]            ; Retrieve drive
     push 0x31
     int 80h
     pop es
@@ -268,14 +268,14 @@ fat_write_root:
     pop eax
     ret
     
-    .SizeOfFAT                dw    0x0000
-    .CurrentDrive            db    0x00
-    .StartOfFAT                dw    0x0000
-    .NumberOfFATs            db    0x00
-    .StartOfRoot            dw    0x0000
-    .SizeOfRoot                dw    0x0000
-    .RootEntries            dw    0x0000
-    .BytesPerSector            dw    512
+    .SizeOfFAT      dw 0x0000
+    .CurrentDrive   db 0x00
+    .StartOfFAT     dw 0x0000
+    .NumberOfFATs   db 0x00
+    .StartOfRoot    dw 0x0000
+    .SizeOfRoot     dw 0x0000
+    .RootEntries    dw 0x0000
+    .BytesPerSector dw 512
 
 ; --------------------------------------------------------------------------------------------
 ; Delete cluster chain
@@ -290,53 +290,53 @@ fat12_delete_chain:
     push ecx
     push edx
     push ds
-    mov cx, KernelSpace                    ; Point DS to kernel space
+    mov cx, KernelSpace                     ; Point DS to kernel space
     mov ds, cx
-    mov word [.Cluster], ax                ; Save starting cluster
-    mov byte [.CurrentDrive], dl        ; Save current drive
-    mov ebx, 0x0E                        ; Address of the Reserved sectors constant
-    push 0x25                            ; Fetch some metadata from the BPB
-    int 80h                            ; Load word from address
-    mov word [.StartOfFAT], ax            ; Save result
-    xor eax, eax                        ; Get start of FAT in bytes
+    mov word [.Cluster], ax                 ; Save starting cluster
+    mov byte [.CurrentDrive], dl            ; Save current drive
+    mov ebx, 0x0E                           ; Address of the Reserved sectors constant
+    push 0x25                               ; Fetch some metadata from the BPB
+    int 80h                                 ; Load word from address
+    mov word [.StartOfFAT], ax              ; Save result
+    xor eax, eax                            ; Get start of FAT in bytes
     mov ax, word [.StartOfFAT]
     mov ebx, 512
     mul ebx
     mov dword [.StartOfFATInBytes], eax
-    .delete_cluster:                    ; Delete cluster
-        mov ax, word [.Cluster]            ; Divide cluster by 2
+    .delete_cluster:                        ; Delete cluster
+        mov ax, word [.Cluster]             ; Divide cluster by 2
         mov bx, 2
         xor dx, dx
         div bx
-        add ax, word [.Cluster]            ; Add this to get CLUSTER*1.5 (12 bit)
+        add ax, word [.Cluster]             ; Add this to get CLUSTER*1.5 (12 bit)
         xor ebx, ebx
         mov bx, ax
         push dx
         add ebx, dword [.StartOfFATInBytes]
         mov dl, byte [.CurrentDrive]
         push 0x25
-        int 80h                        ; Fetch cluster
+        int 80h                             ; Fetch cluster
         pop dx
-        cmp dx, 1                        ; If DX is on, we are on a split byte, and need to fetch 2 bytes,
-        je .split_byte                    ; get the high nibble of the first, and add the second * 0x10
-        push bx                            ; Otherwise keep the high 4 bits of AH, clear the rest
-        mov bx, ax                        ; Save next cluster
+        cmp dx, 1                           ; If DX is on, we are on a split byte, and need to fetch 2 bytes,
+        je .split_byte                      ; get the high nibble of the first, and add the second * 0x10
+        push bx                             ; Otherwise keep the high 4 bits of AH, clear the rest
+        mov bx, ax                          ; Save next cluster
         and bh, 00001111b
         mov word [.Cluster], bx
         pop bx
         and ax, 1111000000000000b
-        push 0x32                        ; Write cluster to the FAT
+        push 0x32                           ; Write cluster to the FAT
         int 80h
         jmp .end_fetch
     .split_byte:
         push bx
         mov bx, ax
-        and bl, 11110000b                ; Save next cluster
+        and bl, 11110000b                   ; Save next cluster
         shr bx, 4
         mov word [.Cluster], bx
         pop bx
-        and ax, 0000000000001111b        ; Clear everything but low 4 of AL
-        push 0x32                        ; Write cluster to the FAT
+        and ax, 0000000000001111b           ; Clear everything but low 4 of AL
+        push 0x32                           ; Write cluster to the FAT
         int 80h
     .end_fetch:
         cmp word [.Cluster], 0xFF7
@@ -350,10 +350,10 @@ fat12_delete_chain:
         pop eax
         ret
 
-    .CurrentDrive                db    0x00
-    .Cluster                    dw    0x0000
-    .StartOfFAT                    dw    0x0000
-    .StartOfFATInBytes            dd    0x00000000
+    .CurrentDrive      db 0x00
+    .Cluster           dw 0x0000
+    .StartOfFAT        dw 0x0000
+    .StartOfFATInBytes dd 0x00000000
 
 ; --------------------------------------------------------------------------------------------
 ; Dump cluster chain to buffer
@@ -368,74 +368,74 @@ fat12_load_chain:
     push ecx
     push edx
     push ds
-    mov cx, KernelSpace                    ; Point DS to kernel space
+    mov cx, KernelSpace                     ; Point DS to kernel space
     mov ds, cx
-    mov word [.Cluster], ax                ; Save starting cluster
-    mov word [.BufferOffset], bx        ; Save buffer offset
-    mov byte [.CurrentDrive], dl        ; Save current drive
-    mov ebx, 0x0D                        ; Address of the Sectors per cluster constant
-    push 0x24                            ; Fetch metadata from the BPB
-    int 80h                            ; Load byte from address
+    mov word [.Cluster], ax                 ; Save starting cluster
+    mov word [.BufferOffset], bx            ; Save buffer offset
+    mov byte [.CurrentDrive], dl            ; Save current drive
+    mov ebx, 0x0D                           ; Address of the Sectors per cluster constant
+    push 0x24                               ; Fetch metadata from the BPB
+    int 80h                                 ; Load byte from address
     mov byte [.SectorsPerCluster], al
-    mov ebx, 0x0E                        ; Address of the Reserved sectors constant
+    mov ebx, 0x0E                           ; Address of the Reserved sectors constant
     push 0x25
-    int 80h                            ; Load word from address
-    mov word [.StartOfFAT], ax            ; Save result
-    mov ebx, 0x10                        ; Address of the Number of FATs constant
+    int 80h                                 ; Load word from address
+    mov word [.StartOfFAT], ax              ; Save result
+    mov ebx, 0x10                           ; Address of the Number of FATs constant
     push 0x24
-    int 80h                            ; Load word from address
-    mov byte [.NumberOfFATs], al        ; Save result
-    mov ebx, 0x11                        ; Address of the Root entries constant
+    int 80h                                 ; Load word from address
+    mov byte [.NumberOfFATs], al            ; Save result
+    mov ebx, 0x11                           ; Address of the Root entries constant
     push 0x25
-    int 80h                            ; Load word from address
-    mov word [.RootEntries], ax            ; Save result
-    mov ebx, 0x16                        ; Address of the Sectors per FAT constant
+    int 80h                                 ; Load word from address
+    mov word [.RootEntries], ax             ; Save result
+    mov ebx, 0x16                           ; Address of the Sectors per FAT constant
     push 0x25
-    int 80h                            ; Load word from address
-    mov word [.SizeOfFAT], ax            ; Save result
-    mov ax, word [.SectorsPerCluster]    ; Get sectors per cluster in bytes
+    int 80h                                 ; Load word from address
+    mov word [.SizeOfFAT], ax               ; Save result
+    mov ax, word [.SectorsPerCluster]       ; Get sectors per cluster in bytes
     mov bx, 512
     mul bx
     mov word [.SectorsPerClusterInBytes], ax
-    xor eax, eax                        ; Get start of FAT in bytes
+    xor eax, eax                            ; Get start of FAT in bytes
     mov ax, word [.StartOfFAT]
     mov ebx, 512
     mul ebx
-    mov dword [.StartOfFATInBytes], eax    ; Calculate the start and size of the root directory
-    mov ax, word [.SizeOfFAT]            ; Start = reserved_sectors + (number_of_FATs * sectors_per_FAT)
-    mov bl, byte [.NumberOfFATs]        ; Size = (root_entries * 32) / bytes_per_sector
-    xor bh, bh                            ; Number of fats * sector per fat in AX
+    mov dword [.StartOfFATInBytes], eax     ; Calculate the start and size of the root directory
+    mov ax, word [.SizeOfFAT]               ; Start = reserved_sectors + (number_of_FATs * sectors_per_FAT)
+    mov bl, byte [.NumberOfFATs]            ; Size = (root_entries * 32) / bytes_per_sector
+    xor bh, bh                              ; Number of fats * sector per fat in AX
     mul bx
-    add ax, word [.StartOfFAT]            ; Add reserved sectors
-    mov word [.StartOfRoot], ax            ; Save result in memory
+    add ax, word [.StartOfFAT]              ; Add reserved sectors
+    mov word [.StartOfRoot], ax             ; Save result in memory
     mov ax, 32; Root entries * 32
     mul word [.RootEntries]
-    xor dx, dx                            ; XOR DX for division
+    xor dx, dx                              ; XOR DX for division
     div word [.BytesPerSector]
-    mov word [.SizeOfRoot], ax            ; Save result in memory
-    mov ax, word [.StartOfRoot]            ; Start of data = (Start of root - 2) + size of root
-    sub ax, 2                            ; Subtract 2 to get LBA
+    mov word [.SizeOfRoot], ax              ; Save result in memory
+    mov ax, word [.StartOfRoot]             ; Start of data = (Start of root - 2) + size of root
+    sub ax, 2                               ; Subtract 2 to get LBA
     add ax, word [.SizeOfRoot]
-    mov word [.DataStart], ax            ; Load chain
-    mov ax, word [.Cluster]                ; Prepare to enter loop
+    mov word [.DataStart], ax               ; Load chain
+    mov ax, word [.Cluster]                 ; Prepare to enter loop
     mov bx, word [.BufferOffset]
     .cluster_loop:
         mov dl, byte [.CurrentDrive]        ; Retrieve current drive
-        cmp ax, 0xFF7                        ; Is the last cluster?
+        cmp ax, 0xFF7                       ; Is the last cluster?
         jg .done                            ; If yes, we finished
-        mul byte [.SectorsPerCluster]        ; Multiply ax by the sectors per cluster
-        add ax, word [.DataStart]            ; Add the data start offset
+        mul byte [.SectorsPerCluster]       ; Multiply ax by the sectors per cluster
+        add ax, word [.DataStart]           ; Add the data start offset
         xor cx, cx
         mov cl, byte [.SectorsPerCluster]
-        push 0x23                            ; Read
+        push 0x23                           ; Read
         int 80h
-        add bx, word [.SectorsPerClusterInBytes]    ; Move buffer up the bytes per cluster size
+        add bx, word [.SectorsPerClusterInBytes]; Move buffer up the bytes per cluster size
         push bx
-        mov ax, word [.Cluster]                ; Divide cluster by 2
+        mov ax, word [.Cluster]             ; Divide cluster by 2
         mov bx, 2
         xor dx, dx
         div bx
-        add ax, word [.Cluster]                ; Add this to get CLUSTER*1.5 (12 bit)
+        add ax, word [.Cluster]             ; Add this to get CLUSTER*1.5 (12 bit)
         xor ebx, ebx
         mov bx, ax
         push dx
@@ -444,16 +444,16 @@ fat12_load_chain:
         push 0x25
         int 80h                            ; Fetch cluster
         pop dx
-        cmp dx, 1                            ; If DX is on, we are on a split byte, and need to fetch 2 bytes,
-        je .split_byte                        ; get the high nibble of the first, and add the second * 0x10
-        and ah, 00001111b                    ; Otherwise clear the high 4 bits of AH
+        cmp dx, 1                          ; If DX is on, we are on a split byte, and need to fetch 2 bytes,
+        je .split_byte                     ; get the high nibble of the first, and add the second * 0x10
+        and ah, 00001111b                  ; Otherwise clear the high 4 bits of AH
         jmp .end_fetch
     .split_byte:
-        and al, 11110000b                    ; Clear low 4 of AL
-        shr ax, 4                            ; Shift right a nibble
+        and al, 11110000b                  ; Clear low 4 of AL
+        shr ax, 4                          ; Shift right a nibble
     .end_fetch:
         pop bx
-        mov word [.Cluster], ax                ; Save current cluster
+        mov word [.Cluster], ax            ; Save current cluster
         jmp .cluster_loop
     .done:
         pop ds
@@ -463,20 +463,20 @@ fat12_load_chain:
         pop eax
         ret
 
-    .DataStart                    dw    0x0000
-    .SizeOfFAT                    dw    0x0000
-    .CurrentDrive                db    0x00
-    .Cluster                    dw    0x0000
-    .BufferOffset                dw    0x0000
-    .SectorsPerCluster            db    0x00
-    .SectorsPerClusterInBytes    dw    0x0000
-    .StartOfFAT                    dw    0x0000
-    .StartOfFATInBytes            dd    0x00000000
-    .NumberOfFATs                db    0x00
-    .StartOfRoot                dw    0x0000
-    .SizeOfRoot                    dw    0x0000
-    .RootEntries                dw    0x0000
-    .BytesPerSector                dw    512
+    .DataStart                dw 0x0000
+    .SizeOfFAT                dw 0x0000
+    .CurrentDrive             db 0x00
+    .Cluster                  dw 0x0000
+    .BufferOffset             dw 0x0000
+    .SectorsPerCluster        db 0x00
+    .SectorsPerClusterInBytes dw 0x0000
+    .StartOfFAT               dw 0x0000
+    .StartOfFATInBytes        dd 0x00000000
+    .NumberOfFATs             db 0x00
+    .StartOfRoot              dw 0x0000
+    .SizeOfRoot               dw 0x0000
+    .RootEntries              dw 0x0000
+    .BytesPerSector           dw 512
 
 ; --------------------------------------------------------------------------------------------
 ; Read a floppy sector with specified LBA address. Warning: internal routine, not suited for
@@ -488,41 +488,41 @@ fat12_load_chain:
 ;        BX --> Buffer offset
 ; OUT:          Carry on error
 floppy_read_sector:
-    push ax                                    ; Save all GPRs
-    push bx                                    ; Prepare entering routine
+    push ax                                 ; Save all GPRs
+    push bx                                 ; Prepare entering routine
     push cx
     push dx
-    push bx                                    ; Save target buffer in stack
-    push dx                                    ; Save drive number in stack
-    xor dx, dx                                ; XOR DX for division
-    mov bx, 18                                ; Divide LBA / Sectors per track (18 on 1.44 floppy)
-    div bx                                    ; LBA to CHS
-    inc dl                                    ; Adjust for sector 0
-    mov byte [.absolute_sector], dl            ; Save sector
-    xor dx, dx                                ; XOR DX for division
+    push bx                                 ; Save target buffer in stack
+    push dx                                 ; Save drive number in stack
+    xor dx, dx                              ; XOR DX for division
+    mov bx, 18                              ; Divide LBA / Sectors per track (18 on 1.44 floppy)
+    div bx                                  ; LBA to CHS
+    inc dl                                  ; Adjust for sector 0
+    mov byte [.absolute_sector], dl         ; Save sector
+    xor dx, dx                              ; XOR DX for division
     mov bx, 2
-    div bx                                    ; Divide / Number of heads (2)
-    mov byte [.absolute_head], dl            ; Save head
-    mov byte [.absolute_track], al            ; Save track
-    pop dx                                    ; Restore drive number from stack
-    pop bx                                    ; Restore target buffer from stack
+    div bx                                  ; Divide / Number of heads (2)
+    mov byte [.absolute_head], dl           ; Save head
+    mov byte [.absolute_track], al          ; Save track
+    pop dx                                  ; Restore drive number from stack
+    pop bx                                  ; Restore target buffer from stack
     mov ah, 0x02                            ; Read sector function
-    mov al, 1                                ; Read 1 sector
-    mov ch, byte [.absolute_track]            ; Use data we calculated
-    mov cl, byte [.absolute_sector]            ; Prepare registers for BIOS int 0x13
+    mov al, 1                               ; Read 1 sector
+    mov ch, byte [.absolute_track]          ; Use data we calculated
+    mov cl, byte [.absolute_sector]         ; Prepare registers for BIOS int 0x13
     mov dh, byte [.absolute_head]
-    clc                                        ; Clear carry for int 0x13 because some BIOSes may not clear it on success
+    clc                                     ; Clear carry for int 0x13 because some BIOSes may not clear it on success
     int 0x13                                ; Call int 0x13
     .done:
-        pop dx                                ; Restore all GPRs
+        pop dx                              ; Restore all GPRs
         pop cx
         pop bx
         pop ax
-        ret                                    ; Exit routine
+        ret                                 ; Exit routine
 
-    .absolute_sector        db 0x00
-    .absolute_head            db 0x00
-    .absolute_track            db 0x00
+    .absolute_sector db 0x00
+    .absolute_head   db 0x00
+    .absolute_track  db 0x00
 
 ; --------------------------------------------------------------------------------------------
 ; Write floppy sector with specified LBA adress. Warning: used as internal routine.
@@ -534,41 +534,41 @@ floppy_read_sector:
 ;      BX --> Buffer offset
 ; OUT:              Carry on error
 floppy_write_sector:
-    push ax                                    ; Save all GPRs
-    push bx                                    ; Prepare entering routine
+    push ax                                 ; Save all GPRs
+    push bx                                 ; Prepare entering routine
     push cx
     push dx
-    push bx                                    ; Save target buffer in stack
-    push dx                                    ; Save drive number in stack
+    push bx                                 ; Save target buffer in stack
+    push dx                                 ; Save drive number in stack
     mov byte [CacheStatus], 0x00            ; Invalidate cache
-    xor dx, dx                                ; XOR DX for division
-    mov bx, 18                                ; Divide LBA / Sectors per track (18 on 1.44 floppy)
-    div bx                                    ; LBA to CHS
-    inc dl                                    ; Adjust for sector 0
-    mov byte [.absolute_sector], dl            ; Save sector
-    xor dx, dx                                ; XOR DX for division
+    xor dx, dx                              ; dx=0 for division
+    mov bx, 18                              ; Divide LBA / Sectors per track (18 on 1.44 floppy)
+    div bx                                  ; LBA to CHS
+    inc dl                                  ; Adjust for sector 0
+    mov byte [.absolute_sector], dl         ; Save sector
+    xor dx, dx                              ; dx=0
     mov bx, 2
-    div bx                                    ; Divide / Number of heads (2)
-    mov byte [.absolute_head], dl            ; Save head
-    mov byte [.absolute_track], al            ; Save track
-    pop dx                                    ; Restore drive number from stack
-    pop bx                                    ; Restore target buffer from stack
+    div bx                                  ; Divide / Number of heads (2)
+    mov byte [.absolute_head], dl           ; Save head
+    mov byte [.absolute_track], al          ; Save track
+    pop dx                                  ; Restore drive number from stack
+    pop bx                                  ; Restore target buffer from stack
     mov ah, 0x03                            ; Write sector function
-    mov al, 1                                ; Write 1 sector
-    mov ch, byte [.absolute_track]            ; Use data we calculated
-    mov cl, byte [.absolute_sector]            ; Prepare registers for BIOS int 0x13
+    mov al, 1                               ; Write 1 sector
+    mov ch, byte [.absolute_track]          ; Use data we calculated
+    mov cl, byte [.absolute_sector]         ; Prepare registers for BIOS int 0x13
     mov dh, byte [.absolute_head]
-    clc                                        ; Clear carry for int 0x13 because some BIOSes may not clear it on success
+    clc                                     ; Clear carry for int 0x13 because some BIOSes may not clear it on success
     int 0x13                                ; Call int 0x13
     .done:
-        pop dx                                ; Restore all GPRs
+        pop dx                              ; Restore all GPRs
         pop cx
         pop bx
         pop ax
-        ret                                    ; Exit routine
-    .absolute_sector        db 0x00
-    .absolute_head            db 0x00
-    .absolute_track            db 0x00
+        ret                                 ; Exit routine
+    .absolute_sector db 0x00
+    .absolute_head   db 0x00
+    .absolute_track  db 0x00
     
 ; --------------------------------------------------------------------------------------------
 ; Convert relative path to absolute one.
